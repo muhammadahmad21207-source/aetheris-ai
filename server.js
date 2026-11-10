@@ -16,8 +16,8 @@ app.post('/api/chat', async (req, res) => {
             return res.status(400).json({ error: 'Messages are required' });
         }
 
-        // Use the stable gemini-2.5-flash or gemini-1.5-flash model
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        // Use the stable gemini-pro model
+        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
         // Format history for the SDK
         const chatHistory = messages.slice(0, -1).map(msg => ({
