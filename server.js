@@ -16,19 +16,14 @@ app.post('/api/chat', async (req, res) => {
             return res.status(400).json({ error: 'Messages are required' });
         }
 
-        // Use the stable gemini-pro model
-        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+        // Use the official gemini-1.5-flash model
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-        // Format history for the SDK
-        const chatHistory = messages.slice(0, -1).map(msg => ({
-            role: msg.role === 'user' ? 'user' : 'model',
-            parts: [{ text: msg.content }]
-        }));
-
+        // Get the latest message from user
         const latestMessage = messages[messages.length - 1].content;
 
-        const chat = model.startChat({ history: chatHistory });
-        const result = await chat.sendMessage(latestMessage);
+        // Generate response directly
+        const result = await model.generateContent(latestMessage);
         const responseText = await result.response.text();
 
         res.json({ reply: responseText });
