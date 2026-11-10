@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aetheris AI - CogniPulse AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0f172a',
+                        cardBg: '#1e293b',
+                        accent: '#6366f1'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-darkBg text-gray-100 h-screen flex flex-col font-sans">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-cardBg border-b border-gray-800 p-4 flex justify-between items-center shadow-md">
+        <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-white shadow-lg">A</div>
+            <div>
+                <h1 class="font-bold text-lg leading-tight tracking-wide">Aetheris AI</h1>
+                <p class="text-xs text-indigo-400 font-medium">Powered by CogniPulse AI</p>
+            </div>
+        </div>
+        <div id="authStatus" class="text-xs bg-gray-800 px-3 py-1.5 rounded-full border border-gray-700 text-gray-300">
+            Guest Mode (Connected)
+        </div>
+    </header>
+
+    <!-- Main Chat Workspace -->
+    <main id="chatContainer" class="flex-1 overflow-y-auto p-4 space-y-6 max-w-4xl w-full mx-auto">
+        <!-- Welcome Message -->
+        <div class="flex items-start space-x-4">
+            <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-sm font-bold shrink-0 shadow">AI</div>
+            <div class="bg-cardBg border border-gray-800 p-4 rounded-2xl max-w-xl shadow-md text-sm leading-relaxed">
+                Hello! I am <strong>Aetheris AI</strong>, engineered by <strong>CogniPulse AI</strong> (Founded by Ahmed). How can I assist you today across coding, cybersecurity, business strategy, or creative arts?
+            </div>
+        </div>
+    </main>
+
+    <!-- Chat Input Box -->
+    <footer class="bg-cardBg border-t border-gray-800 p-4 shadow-xl">
+        <form id="chatForm" class="max-w-4xl mx-auto flex items-center space-x-3">
+            <input type="text" id="userInput" placeholder="Message Aetheris AI..." required
+                class="flex-1 bg-gray-900 border border-gray-700 rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:border-indigo-500 text-gray-100 placeholder-gray-500 shadow-inner">
+            <button type="submit" id="sendBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py.5 rounded-xl text-sm font-semibold transition shadow-lg flex items-center justify-center">
+                Send
+            </button>
+        </form>
+    </footer>
+
+    <script>
+        const chatContainer = document.getElementById('chatContainer');
+        const chatForm = document.getElementById('chatForm');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+
+        let messageHistory = [];
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            appendMessage(text, 'user');
+            messageHistory.push({ role: 'user', content: text });
+            userInput.value = '';
+            userInput.disabled = true;
+
+            const loadingId = appendMessage('Thinking...', 'ai', true);
+
+            try {
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ messages: messageHistory })
+                });
+
+                const data = await res.json();
+                document.getElementById(loadingId).remove();
+
+                if (data.reply) {
+                    appendMessage(data.reply, 'ai');
+                    messageHistory.push({ role: 'model', content: data.reply });
+                } else {
+                    appendMessage('Error: ' + (data.error || 'Failed to fetch response.'), 'ai');
+                }
+            } catch (err) {
+                document.getElementById(loadingId).remove();
+                appendMessage('Network connection error. Please check server status.', 'ai');
+            } finally {
+                userInput.disabled = false;
+                userInput.focus();
+            }
+        });
+
+        function appendMessage(text, sender, isLoading
