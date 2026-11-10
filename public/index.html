@@ -20,57 +20,71 @@
         }
     </script>
 </head>
-<body class="bg-darkBg text-gray-100 h-screen flex flex-col font-sans">
+<body class="bg-darkBg text-gray-100 font-sans antialiased h-screen flex flex-col justify-between overflow-hidden">
 
-    <!-- Top Navigation Header -->
-    <header class="bg-cardBg border-b border-gray-800 p-4 flex justify-between items-center shadow-md">
+    <!-- Header -->
+    <header class="bg-cardBg border-b border-gray-800 p-4 flex items-center justify-between shadow-md z-10">
         <div class="flex items-center space-x-3">
-            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-white shadow-lg">A</div>
+            <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-lg shadow-lg">
+                A
+            </div>
             <div>
                 <h1 class="font-bold text-lg leading-tight tracking-wide">Aetheris AI</h1>
                 <p class="text-xs text-indigo-400 font-medium">Powered by CogniPulse AI</p>
             </div>
         </div>
-        <div id="authStatus" class="text-xs bg-gray-800 px-3 py-1.5 rounded-full border border-gray-700 text-gray-300">
+        <div class="text-xs bg-gray-800 text-gray-300 px-3 py-1.5 rounded-full border border-gray-700 shadow-inner">
             Guest Mode (Connected)
         </div>
     </header>
 
-    <!-- Main Chat Workspace -->
-    <main id="chatContainer" class="flex-1 overflow-y-auto p-4 space-y-6 max-w-4xl w-full mx-auto">
+    <!-- Chat Area -->
+    <main id="chatContainer" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 max-w-4xl w-full mx-auto">
         <!-- Welcome Message -->
         <div class="flex items-start space-x-4">
-            <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-sm font-bold shrink-0 shadow">AI</div>
-            <div class="bg-cardBg border border-gray-800 p-4 rounded-2xl max-w-xl shadow-md text-sm leading-relaxed">
-                Hello! I am <strong>Aetheris AI</strong>, engineered by <strong>CogniPulse AI</strong> (Founded by Ahmed). How can I assist you today across coding, cybersecurity, business strategy, or creative arts?
+            <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-sm font-bold shrink-0 shadow">
+                AI
+            </div>
+            <div class="bg-cardBg border border-gray-800 text-gray-100 p-4 rounded-2xl max-w-xl shadow-md text-sm leading-relaxed whitespace-pre-wrap">
+Hello! I am **Aetheris AI**, engineered by **CogniPulse AI** (Founded by Ahmed). How can I assist you today across coding, cybersecurity, business strategy, or creative arts?
             </div>
         </div>
     </main>
 
-    <!-- Chat Input Box -->
-    <footer class="bg-cardBg border-t border-gray-800 p-4 shadow-xl">
+    <!-- Input Footer -->
+    <footer class="bg-cardBg border-t border-gray-800 p-4 shadow-lg">
         <form id="chatForm" class="max-w-4xl mx-auto flex items-center space-x-3">
-            <input type="text" id="userInput" placeholder="Message Aetheris AI..." required
-                class="flex-1 bg-gray-900 border border-gray-700 rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:border-indigo-500 text-gray-100 placeholder-gray-500 shadow-inner">
-            <button type="submit" id="sendBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py.5 rounded-xl text-sm font-semibold transition shadow-lg flex items-center justify-center">
+            <input 
+                type="text" 
+                id="userInput" 
+                placeholder="Message Aetheris AI..." 
+                autocomplete="off"
+                class="flex-1 bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-inner"
+            >
+            <button 
+                type="submit" 
+                id="sendBtn"
+                class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-3 rounded-xl transition duration-200 shadow-md flex items-center justify-center text-sm"
+            >
                 Send
             </button>
         </form>
     </footer>
 
+    <!-- Script to handle chat logic -->
     <script>
         const chatContainer = document.getElementById('chatContainer');
         const chatForm = document.getElementById('chatForm');
         const userInput = document.getElementById('userInput');
-        const sendBtn = document.getElementById('sendBtn');
 
         let messageHistory = [];
 
-        chatForm.addEventListener('submit', async (e) => {
+        chatForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             const text = userInput.value.trim();
             if (!text) return;
 
+            // Add user message to UI
             appendMessage(text, 'user');
             messageHistory.push({ role: 'user', content: text });
             userInput.value = '';
@@ -79,28 +93,52 @@
             const loadingId = appendMessage('Thinking...', 'ai', true);
 
             try {
-                const res = await fetch('/api/chat', {
+                const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ messages: messageHistory })
                 });
 
-                const data = await res.json();
-                document.getElementById(loadingId).remove();
+                const data = await response.json();
+                
+                // Remove loading bubble
+                const loadingElement = document.getElementById(loadingId);
+                if (loadingElement) loadingElement.remove();
 
-                if (data.reply) {
+                if (response.ok && data.reply) {
                     appendMessage(data.reply, 'ai');
                     messageHistory.push({ role: 'model', content: data.reply });
                 } else {
-                    appendMessage('Error: ' + (data.error || 'Failed to fetch response.'), 'ai');
+                    appendMessage('Error: ' + (data.error || 'Server error'), 'ai');
                 }
             } catch (err) {
-                document.getElementById(loadingId).remove();
-                appendMessage('Network connection error. Please check server status.', 'ai');
+                const loadingElement = document.getElementById(loadingId);
+                if (loadingElement) loadingElement.remove();
+                appendMessage('Network connection failed.', 'ai');
             } finally {
                 userInput.disabled = false;
                 userInput.focus();
             }
         });
 
-        function appendMessage(text, sender, isLoading
+        function appendMessage(text, sender) {
+            const id = 'msg-' + Date.now();
+            const isUser = sender === 'user';
+            
+            const html = `
+                <div id="${id}" class="flex items-start space-x-4 ${isUser ? 'flex-row-reverse space-x-reverse' : ''}">
+                    <div class="w-8 h-8 rounded-full ${isUser ? 'bg-purple-600' : 'bg-indigo-600'} flex items-center justify-center text-sm font-bold shrink-0 shadow">
+                        ${isUser ? 'U' : 'AI'}
+                    </div>
+                    <div class="${isUser ? 'bg-indigo-600 text-white' : 'bg-cardBg border border-gray-800 text-gray-100'} p-4 rounded-2xl max-w-xl shadow-md text-sm leading-relaxed whitespace-pre-wrap">
+                        ${text}
+                    </div>
+                </div>
+            `;
+            chatContainer.insertAdjacentHTML('beforeend', html);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return id;
+        }
+    </script>
+</body>
+</html>
