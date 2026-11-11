@@ -15,8 +15,8 @@ app.post('/api/chat', async (req, res) => {
         const latestMessage = messages[messages.length - 1].content;
         const apiKey = process.env.GEMINI_API_KEY;
 
-        // Using gemini-pro which is natively supported on v1beta REST API
-        const apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+        // Using official 'v1' endpoint and 'gemini-1.5-flash'
+        const apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -37,6 +37,11 @@ app.post('/api/chat', async (req, res) => {
         console.error('Server Error:', error);
         res.status(500).json({ error: error.message || 'Internal Server Error' });
     }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });
 
 const PORT = process.env.PORT || 3000;
