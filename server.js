@@ -15,8 +15,8 @@ app.post('/api/chat', async (req, res) => {
         const latestMessage = messages[messages.length - 1].content;
         const apiKey = process.env.GEMINI_API_KEY;
 
-        // Direct Google Gemini REST API call (No SDK version issues)
-        const apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        // Using gemini-pro which is natively supported on v1beta REST API
+        const apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
