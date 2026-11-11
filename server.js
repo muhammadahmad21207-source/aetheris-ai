@@ -1,13 +1,9 @@
 const express = require('express');
 const path = require('path');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
-
-// Initialize Gemini SDK
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 app.post('/api/chat', async (req, res) => {
     try {
@@ -16,19 +12,29 @@ app.post('/api/chat', async (req, res) => {
             return res.status(400).json({ error: 'Messages are required' });
         }
 
-        // Use the official gemini-1.5-flash model
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
-        // Get the latest message from user
         const latestMessage = messages[messages.length - 1].content;
+        const apiKey = process.env.GEMINI_API_KEY;
 
-        // Generate response directly
-        const result = await model.generateContent(latestMessage);
-        const responseText = await result.response.text();
+        // Direct Google Gemini REST API call (No SDK version issues)
+        const apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: latestMessage }] }]
+            })
+        });
 
-        res.json({ reply: responseText });
+        const data = await apiResponse.json();
+
+        if (data.candidates && data.candidates[0].content) {
+            const replyText = data.candidates[0].content.parts[0].text;
+            res.json({ reply: replyText });
+        } else {
+            console.error('API Error Response:', data);
+            res.status(500).json({ error: data.error?.message || 'Failed to generate response from Gemini' });
+        }
     } catch (error) {
-        console.error('Gemini API Error:', error);
+        console.error('Server Error:', error);
         res.status(500).json({ error: error.message || 'Internal Server Error' });
     }
 });
